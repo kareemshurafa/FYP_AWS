@@ -8,7 +8,8 @@ app = Flask(__name__)
 s3_client = boto3.client(
     's3',
     aws_access_key_id=os.getenv('S3_KEY'), # access key for AWS account
-    aws_secret_access_key=os.getenv('S3_ACCESS') # secret key for AWS account
+    aws_secret_access_key=os.getenv('S3_ACCESS') # secret key for AWS account,
+    region_name=os.getenv('REGION')
 )
 
 @app.route("/")
