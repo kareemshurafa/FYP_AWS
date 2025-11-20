@@ -14,3 +14,15 @@ s3_client = boto3.client(
 @app.route("/")
 def home():
     return "<p> URLGetter is live! </p>"
+
+@app.route("/geturl")
+def geturl():
+    try:
+        response = s3_client.generate_presigned_url(
+            'get_object',
+            Params={'Bucket': os.getenv('BUCKET_NAME'), 'Key': os.getenv('KEY_NAME')},
+            ExpiresIn=3600,
+        )
+        return "<p> " + response + " <p>"
+    except:
+        return "<p> URL failed to be generated <p>"
