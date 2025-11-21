@@ -18,12 +18,13 @@ def home():
 
 @app.route("/geturl")
 def geturl():
+    # Reference - https://boto3.amazonaws.com/v1/documentation/api/latest/guide/s3-presigned-urls.html
     try:
         response = s3_client.generate_presigned_url(
             'get_object',
             Params={'Bucket': os.getenv('BUCKET_NAME'), 'Key': os.getenv('KEY_NAME')},
             ExpiresIn=3600,
         )
-        return "<p> " + response + " <p>"
+        return "<p> URL successfully generated! <p>"
     except:
         return "<p> URL failed to be generated <p>"
