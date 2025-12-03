@@ -24,6 +24,7 @@ def geturl():
     if request.method == 'POST':
         # Reference - https://tedboy.github.io/flask/generated/generated/flask.Request.html
         data = request.get_json(silent=True) # silent set to True to avoid direct fails and return None
+        app.logger.info(data)
         key = data['objectName']
         password = data['password']
 
