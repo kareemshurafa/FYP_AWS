@@ -41,7 +41,7 @@ def geturl():
                     ExpiresIn=3600,
                 )
                 # Reference - https://flask.palletsprojects.com/en/stable/errorhandling/
-                return "URL successfully generated!", 200
+                return response, 200
             except:
                 return "URL failed to be generated", 400
         else:
