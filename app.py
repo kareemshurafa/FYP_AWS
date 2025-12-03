@@ -22,8 +22,10 @@ def home():
 @app.route("/geturl", methods=['POST'])
 def geturl():
     if request.method == 'POST':
-        key = request.args.get('objectName')
-        password = request.args.get('password')
+        # Reference - https://tedboy.github.io/flask/generated/generated/flask.Request.html
+        data = request.get_json(silent=True) # silent set to True to avoid direct fails and return None
+        key = data['objectName']
+        password = data['password']
         
         # Reference - https://flask-bcrypt.readthedocs.io/en/1.0.1/
         password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
