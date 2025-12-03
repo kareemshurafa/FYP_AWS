@@ -24,8 +24,12 @@ def geturl():
     if request.method == 'POST':
         # Reference - https://tedboy.github.io/flask/generated/generated/flask.Request.html
         data = request.get_json(silent=True) # silent set to True to avoid direct fails and return None
-        key = data['objectName'] + ".zip"
+        key = data['objectName']
         password = data['password']
+
+        # checking if user passed appropriate .zip suffix for object name in S3 bucket
+        if not key.endswith(".zip"):
+            key += ".zip"
         
         # Reference - https://flask-bcrypt.readthedocs.io/en/1.0.1/
         password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
@@ -47,7 +51,7 @@ def geturl():
                 response = s3_client.generate_presigned_url(
                     'get_object',
                     Params={'Bucket': os.getenv('BUCKET_NAME'), 'Key': key},
-                    ExpiresIn=3600,
+                    ExpiresIn=300,
                 )
                 # Reference - https://flask.palletsprojects.com/en/stable/errorhandling/
                 return response, 200
