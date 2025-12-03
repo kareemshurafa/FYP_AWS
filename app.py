@@ -29,7 +29,7 @@ def geturl():
         
         # Reference - https://flask-bcrypt.readthedocs.io/en/1.0.1/
         password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
-        password_env = os.getenv['PASSWORD']
+        password_env = os.getenv('PASSWORD')
         checker = bcrypt.check_password_hash(password_hash, password_env)
         if checker:
             # Reference - https://boto3.amazonaws.com/v1/documentation/api/latest/guide/s3-presigned-urls.html
