@@ -1,7 +1,7 @@
 from flask import Flask
 import boto3
 import os
-from flask import request , jsonify
+from flask import request, jsonify
 from flask_bcrypt import Bcrypt
 
 app = Flask(__name__)
@@ -32,13 +32,15 @@ def geturl():
         if checker:
             # Reference - https://boto3.amazonaws.com/v1/documentation/api/latest/guide/s3-presigned-urls.html
             try:
+                # Changed response to include key from JSON request
                 response = s3_client.generate_presigned_url(
                     'get_object',
-                    Params={'Bucket': os.getenv('BUCKET_NAME'), 'Key': os.getenv('KEY_NAME')},
+                    Params={'Bucket': os.getenv('BUCKET_NAME'), 'Key': key},
                     ExpiresIn=3600,
                 )
-                return "<p> URL successfully generated! <p>"
+                # Reference - https://flask.palletsprojects.com/en/stable/errorhandling/
+                return "URL successfully generated!", 200
             except:
-                return "<p> URL failed to be generated <p>"
+                return "URL failed to be generated", 400
         else:
-            return "<p> Wrong password! <p>"
+            return "Wrong password!", 401
