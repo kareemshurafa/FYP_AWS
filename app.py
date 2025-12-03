@@ -24,7 +24,7 @@ def geturl():
     if request.method == 'POST':
         # Reference - https://tedboy.github.io/flask/generated/generated/flask.Request.html
         data = request.get_json(silent=True) # silent set to True to avoid direct fails and return None
-        key = data['objectName']
+        key = data['objectName'] + ".zip"
         password = data['password']
         
         # Reference - https://flask-bcrypt.readthedocs.io/en/1.0.1/
@@ -32,6 +32,15 @@ def geturl():
         password_env = os.getenv('PASSWORD')
         checker = bcrypt.check_password_hash(password_hash, password_env)
         if checker:
+            # Reference - https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3/client/get_object.html#S3.Client.get_object
+            # check if object with the given key exists first
+            try:
+                response = s3_client.get_object(
+                    Bucket=os.getenv('BUCKET_NAME'),
+                    Key=key
+                )
+            except:
+                return "Object with given name does not exist!", 404
             # Reference - https://boto3.amazonaws.com/v1/documentation/api/latest/guide/s3-presigned-urls.html
             try:
                 # Changed response to include key from JSON request
