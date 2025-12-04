@@ -24,13 +24,13 @@ def geturl():
     if request.method == 'POST':
         # Reference - https://tedboy.github.io/flask/generated/generated/flask.Request.html
         
-        # data = request.get_json(silent=True) # silent set to True to avoid direct fails and return None
-        # app.logger.info(data)
-        # key = data['objectName']
-        # password = data['password']
+        data = request.get_json(silent=True) # silent set to True to avoid direct fails and return None
+        app.logger.info(data)
+        key = data['objectName']
+        password = data['password']
 
-        key = request.form['objectName']
-        password = request.form['password']
+        # key = request.form['objectName']
+        # password = request.form['password']
 
         # checking if user passed appropriate .zip suffix for object name in S3 bucket
         if not key.endswith(".zip"):
