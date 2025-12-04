@@ -49,7 +49,8 @@ def geturl():
                     Key=key
                 )
             except:
-                return "Object with given name does not exist!", 404
+                msg = "Object with given name does not exist with  name: " + key
+                return msg, 404
             # Reference - https://boto3.amazonaws.com/v1/documentation/api/latest/guide/s3-presigned-urls.html
             try:
                 # Changed response to include key from JSON request
@@ -63,4 +64,5 @@ def geturl():
             except:
                 return "URL failed to be generated", 400
         else:
-            return "Wrong password!", 401
+            msg = "Wrong password given of: " + password
+            return msg, 401
