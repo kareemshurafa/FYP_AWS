@@ -31,8 +31,12 @@ def upload():
         #     filenames.append(file.filename)
         
         # Reference - https://docs.aws.amazon.com/boto3/latest/guide/s3-uploading-files.html
+        # Reference - https://docs.aws.amazon.com/boto3/latest/reference/customizations/s3.html#boto3.s3.transfer.S3Transfer.ALLOWED_UPLOAD_ARGS
         try:
-            s3_client.upload_file(filename, os.getenv('BUCKET_NAME'), filename)
+            s3_client.upload_file(
+                file, os.getenv('BUCKET_NAME'), filename,
+                ExtraArgs={
+                    'ACL': 'public-read'})
             # flash('Successful upload!')
             return redirect(url_for('upload'))
         except:
