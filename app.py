@@ -3,6 +3,8 @@ import boto3
 import os
 from flask_bcrypt import Bcrypt
 from werkzeug.utils import secure_filename
+from botocore.exceptions import ClientError
+import logging
 
 app = Flask(__name__)
 bcrypt = Bcrypt(app)
@@ -39,8 +41,8 @@ def upload():
                     'ACL': 'public-read'})
             # flash('Successful upload!')
             return redirect(url_for('upload'))
-        except:
-            pass
+        except ClientError as e:
+            logging.error(e)
             # flash('Unsuccessful upload - try again.')
             return redirect(url_for('upload'))
     return render_template('upload.html')
