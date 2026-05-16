@@ -24,7 +24,7 @@ def upload():
     # Reference - https://flask.palletsprojects.com/en/stable/patterns/fileuploads/
     if request.method == 'POST':
         file = request.files['file']
-        file.filename = secure_filename(file.filename)
+        filename = secure_filename(file.filename)
         # filenames = []
         # for file in files:
         #     file.filename = secure_filename(file.filename)
@@ -32,7 +32,7 @@ def upload():
         
         # Reference - https://docs.aws.amazon.com/boto3/latest/guide/s3-uploading-files.html
         try:
-            s3_client.upload_file(file, os.getenv('BUCKET_NAME')) # not specifying object_name
+            s3_client.upload_file(filename, os.getenv('BUCKET_NAME'), filename)
             # flash('Successful upload!')
             return redirect(url_for('upload'))
         except:
