@@ -41,7 +41,7 @@ def upload():
             #         f, os.getenv('BUCKET_NAME'), str(filename))
             #         # ExtraArgs={
             #         #     'ACL': 'public-read'})
-            s3_client.upload_file(filecontent, os.getenv('BUCKET_NAME'), str(filename))
+            s3_client.upload_file(filecontent, os.getenv('BUCKET_NAME'), "image.jpg")
             return redirect(url_for('upload'))
         except ClientError as e:
             logging.error(e)
