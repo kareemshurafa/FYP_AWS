@@ -43,6 +43,7 @@ def upload():
             return redirect(url_for('upload'))
         except ClientError as e:
             logging.error(e)
+            logging.info(filename)
             # flash('Unsuccessful upload - try again.')
             return redirect(url_for('upload'))
     return render_template('upload.html')
