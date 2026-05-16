@@ -33,11 +33,12 @@ def upload():
         # Reference - https://docs.aws.amazon.com/boto3/latest/guide/s3-uploading-files.html
         try:
             response = s3_client.upload_file(file, os.getenv('BUCKET_NAME')) # not specifying object_name
-            flash('Successful upload!')
-            return redirect(url_for('upload'))
+            # flash('Successful upload!')
+            return redirect(url_for(''))
         except:
-            flash('Unsuccessful upload - try again.')
-        return redirect(url_for('upload'))
+            pass
+            # flash('Unsuccessful upload - try again.')
+            return redirect(url_for(''))
     return render_template('upload.html')
 
 @app.route("/geturl", methods=['POST'])
