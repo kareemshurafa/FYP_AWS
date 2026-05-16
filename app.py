@@ -25,7 +25,7 @@ def home():
 def upload():
     # Reference - https://flask.palletsprojects.com/en/stable/patterns/fileuploads/
     if request.method == 'POST':
-        file = request.files['file']
+        file = request.files['file'].read()
         filename = secure_filename(file.filename)
         # filenames = []
         # for file in files:
