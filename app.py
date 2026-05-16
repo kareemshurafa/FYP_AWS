@@ -1,8 +1,8 @@
-from flask import Flask
+from flask import Flask, render_template, request, flash, redirect, url_for
 import boto3
 import os
-from flask import request, jsonify
 from flask_bcrypt import Bcrypt
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 bcrypt = Bcrypt(app)
@@ -18,6 +18,27 @@ s3_client = boto3.client(
 @app.route("/")
 def home():
     return "<p> URLGetter is live! </p>"
+
+@app.route("/upload", methods = ['GET', 'POST'])
+def upload():
+    # Reference - https://flask.palletsprojects.com/en/stable/patterns/fileuploads/
+    if request.method == 'POST':
+        file = request.files['file']
+        file.filename = secure_filename(file.filename)
+        # filenames = []
+        # for file in files:
+        #     file.filename = secure_filename(file.filename)
+        #     filenames.append(file.filename)
+        
+        # Reference - https://docs.aws.amazon.com/boto3/latest/guide/s3-uploading-files.html
+        try:
+            response = s3_client.upload_file(file, os.getenv('BUCKET_NAME')) # not specifying object_name
+            flash('Successful upload!')
+            return redirect(url_for('upload'))
+        except:
+            flash('Unsuccessful upload - try again.')
+        return redirect(url_for('upload'))
+    return render_template('upload.html')
 
 @app.route("/geturl", methods=['POST'])
 def geturl():
