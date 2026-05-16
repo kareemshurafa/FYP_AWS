@@ -25,7 +25,8 @@ def home():
 def upload():
     # Reference - https://flask.palletsprojects.com/en/stable/patterns/fileuploads/
     if request.method == 'POST':
-        file = request.files['file'].read()
+        file = request.files['file']
+        filecontent = file.read()
         filename = secure_filename(file.filename)
         # filenames = []
         # for file in files:
@@ -35,7 +36,7 @@ def upload():
         # Reference - https://docs.aws.amazon.com/boto3/latest/guide/s3-uploading-files.html
         # Reference - https://docs.aws.amazon.com/boto3/latest/reference/customizations/s3.html#boto3.s3.transfer.S3Transfer.ALLOWED_UPLOAD_ARGS
         try:
-            with open(file, "rb") as f:
+            with open(filecontent, "rb") as f:
                 s3_client.upload_fileobj(
                     f, os.getenv('BUCKET_NAME'), str(filename))
                     # ExtraArgs={
