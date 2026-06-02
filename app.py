@@ -6,13 +6,17 @@ from werkzeug.utils import secure_filename
 from botocore.exceptions import ClientError
 import logging
 from dotenv import load_dotenv
-import zipfile
+# import zipfile
+# from PIL import Image
 
 app = Flask(__name__)
 bcrypt = Bcrypt(app)
 
+local = False
+
 # For local testing:
-load_dotenv()
+if local:
+    load_dotenv()
 
 # Reference - https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html
 s3_client = boto3.client(
@@ -25,6 +29,52 @@ s3_client = boto3.client(
 @app.route("/")
 def home():
     return "<p> URLGetter is live! </p>"
+
+# @app.route("/prediction", methods = ['GET', 'POST'])
+# def prediction():
+#     # Reference - https://flask.palletsprojects.com/en/stable/patterns/fileuploads/
+#     if request.method == 'POST':
+        
+#         # username = request.form.get('username')
+#         # password = request.form.get('password')
+#         # Reference - https://flask-bcrypt.readthedocs.io/en/1.0.1/
+#         # password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
+#         # password_env = os.getenv('VR_PASSWORD')
+#         # checker = bcrypt.check_password_hash(password_hash, password_env)
+#         # checker2 = username == os.getenv('VR_USERNAME')
+
+#         if True and True:
+#             # Reference - https://docs.djangoproject.com/fr/2.2/topics/http/file-uploads/
+#             files = request.files.getlist('files')
+#             file_list = []
+#             for file in files:
+#                 image = Image.open(file)
+#                 print(image)
+#                 image.save("image.png")
+#             # filename = secure_filename(file.filename)
+#             # print(file_list)
+              
+#         #     # Reference - https://docs.aws.amazon.com/boto3/latest/reference/services/s3/client/put_object.html
+#         #     try:
+#         #         response = s3_client.put_object(
+#         #             Body = filecontent,
+#         #             Bucket = os.getenv('BUCKET_NAME'),
+#         #             Key = filename
+#         #         )
+#         #         print(response)
+#         #         return render_template('upload.html', flash="Successfully uploaded!")
+#         #     except ClientError as e:
+#         #         logging.error(e)
+#         #         return render_template('upload.html', flash="Error uploading file.")
+#         # else:
+#         #     return render_template('upload.html', flash="Username and/or password are incorrect.")
+            
+#         # # # Reference - https://docs.djangoproject.com/fr/2.2/topics/http/file-uploads/
+#         # # files = request.files.getlist('file')
+#         # # print("file: ")
+#         # # print(files)
+
+#     return render_template('prediction.html', flash="")
 
 @app.route("/delete", methods = ['GET', 'POST'])
 def delete():
