@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html>
+<link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}"/>
+<title> Home</title>
+<h1> Welcome {{user}}!</h1>
+<p class="box"><a href="/upload">Upload a File</a></p>
+<p class="box"><a href="/rename">Rename a File</a></p>
+<p class="box"><a href="/delete">Delete a File</a></p>
+<p class="box"><a href="/getlist">Get File List</a></p>
+<p class="box"><a href="/logout">Logout</a></p>
+</html>

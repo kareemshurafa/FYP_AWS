@@ -1,21 +1,19 @@
 <!DOCTYPE html>
 <html>
+<link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}"/>
 <title> Rename Files</title>
 <h1> Rename a File</h1>
-<form method=post enctype=multipart/form-data>
-    <body>Username: </body>
-    <input type="text" name="username" placeholder="Username" required>
-    <br>
-    <body>Password: </body>
-    <input type="text" name="password" placeholder="Password" required>
-    <br>
+<form class="box" method=post enctype=multipart/form-data>
     <body>Original file name: </body>
     <input type="text" name="old_name" required>
+    <br>
     <br>
     <body>New file name: </body>
     <input type="text" name="new_name" required>
     <br>
+    <br>
     <input type="submit" value="Upload">
 </form>
+<p class="back"><a href="/">Back</a></p>
 <h1> {{flash}} </h1>
 </html>

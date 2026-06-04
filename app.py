@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, flash, redirect, url_for
+from flask import Flask, render_template, request, flash, redirect, url_for, session
 import boto3
 import os
 from flask_bcrypt import Bcrypt
@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 # from PIL import Image
 
 app = Flask(__name__)
+app.secret_key = os.getenv('APP_SECRET_KEY')
 bcrypt = Bcrypt(app)
 
 local = False
@@ -26,59 +27,18 @@ s3_client = boto3.client(
     region_name=os.getenv('REGION')
 )
 
+# Reference - adadpted from https://flask.palletsprojects.com/en/stable/quickstart/
 @app.route("/")
 def home():
-    return "<p> URLGetter is live! </p>"
+    if 'username' in session:
+        return render_template('home.html', user=session['username'])
+    return redirect(url_for('login'))
 
-# @app.route("/prediction", methods = ['GET', 'POST'])
-# def prediction():
-#     # Reference - https://flask.palletsprojects.com/en/stable/patterns/fileuploads/
-#     if request.method == 'POST':
-        
-#         # username = request.form.get('username')
-#         # password = request.form.get('password')
-#         # Reference - https://flask-bcrypt.readthedocs.io/en/1.0.1/
-#         # password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
-#         # password_env = os.getenv('VR_PASSWORD')
-#         # checker = bcrypt.check_password_hash(password_hash, password_env)
-#         # checker2 = username == os.getenv('VR_USERNAME')
-
-#         if True and True:
-#             # Reference - https://docs.djangoproject.com/fr/2.2/topics/http/file-uploads/
-#             files = request.files.getlist('files')
-#             file_list = []
-#             for file in files:
-#                 image = Image.open(file)
-#                 print(image)
-#                 image.save("image.png")
-#             # filename = secure_filename(file.filename)
-#             # print(file_list)
-              
-#         #     # Reference - https://docs.aws.amazon.com/boto3/latest/reference/services/s3/client/put_object.html
-#         #     try:
-#         #         response = s3_client.put_object(
-#         #             Body = filecontent,
-#         #             Bucket = os.getenv('BUCKET_NAME'),
-#         #             Key = filename
-#         #         )
-#         #         print(response)
-#         #         return render_template('upload.html', flash="Successfully uploaded!")
-#         #     except ClientError as e:
-#         #         logging.error(e)
-#         #         return render_template('upload.html', flash="Error uploading file.")
-#         # else:
-#         #     return render_template('upload.html', flash="Username and/or password are incorrect.")
-            
-#         # # # Reference - https://docs.djangoproject.com/fr/2.2/topics/http/file-uploads/
-#         # # files = request.files.getlist('file')
-#         # # print("file: ")
-#         # # print(files)
-
-#     return render_template('prediction.html', flash="")
-
-@app.route("/delete", methods = ['GET', 'POST'])
-def delete():
-    if request.method =='POST':
+@app.route("/login", methods=['GET', 'POST'])
+def login():
+    if 'username' in session:
+        return redirect(url_for('home'))
+    if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
         # Reference - https://flask-bcrypt.readthedocs.io/en/1.0.1/
@@ -86,8 +46,43 @@ def delete():
         password_env = os.getenv('VR_PASSWORD')
         checker = bcrypt.check_password_hash(password_hash, password_env)
         checker2 = username == os.getenv('VR_USERNAME')
-
         if checker and checker2:
+            session['username'] = request.form.get('username')
+            return redirect(url_for('home'))
+        else:
+            return render_template('login.html', flash="Username and/or password are incorrect.")
+        
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.pop('username', None)
+    return redirect(url_for('home'))
+
+@app.route("/getlist")
+def getlist():
+    if 'username' in session:
+        # Reference - https://docs.aws.amazon.com/boto3/latest/reference/services/s3/client/list_objects.html
+        try:
+            response = s3_client.list_objects(
+                Bucket=os.getenv('BUCKET_NAME')
+            )
+            object_list = []
+            contents = response["Contents"]
+            for content in contents:
+                object_list.append(str(content['Key']))
+            return render_template('getlist.html', list=object_list)
+        except ClientError as e:
+            logging.error(e)
+            return render_template('getlist.html', flash="Unknown error occured during operation.")
+    else:
+        return redirect(url_for('login'))
+
+
+@app.route("/delete", methods = ['GET', 'POST'])
+def delete():
+    if 'username' in session:
+        if request.method =='POST':
             file = request.form.get('file')
 
             # Reference - https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3/client/get_object.html#S3.Client.get_object
@@ -111,20 +106,14 @@ def delete():
             except ClientError as e:
                 logging.error(e)
                 return render_template('delete.html', flash="Unexpected error occured whilst deleting file")
-    return render_template('delete.html', flash='')
+        return render_template('delete.html', flash='')
+    else:
+        return redirect(url_for('login'))
 
 @app.route("/rename", methods = ['GET', 'POST'])
 def rename():
-    if request.method =='POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
-        # Reference - https://flask-bcrypt.readthedocs.io/en/1.0.1/
-        password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
-        password_env = os.getenv('VR_PASSWORD')
-        checker = bcrypt.check_password_hash(password_hash, password_env)
-        checker2 = username == os.getenv('VR_USERNAME')
-
-        if checker and checker2:
+    if 'username' in session:
+        if request.method =='POST':
             old_file = request.form.get('old_name')
             new_file = request.form.get('new_name')
 
@@ -165,24 +154,16 @@ def rename():
             except ClientError as e:
                 logging.error(e)
                 return render_template('rename.html', flash="Unexpected error occured whilst deleting old file")
-    return render_template('rename.html', flash='')
-        
+        return render_template('rename.html', flash='')
+    else:
+        return redirect(url_for('login'))
 
 
 @app.route("/upload", methods = ['GET', 'POST'])
 def upload():
-    # Reference - https://flask.palletsprojects.com/en/stable/patterns/fileuploads/
-    if request.method == 'POST':
-        
-        username = request.form.get('username')
-        password = request.form.get('password')
-        # Reference - https://flask-bcrypt.readthedocs.io/en/1.0.1/
-        password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
-        password_env = os.getenv('VR_PASSWORD')
-        checker = bcrypt.check_password_hash(password_hash, password_env)
-        checker2 = username == os.getenv('VR_USERNAME')
-
-        if checker and checker2:
+    if 'username' in session:
+        # Reference - https://flask.palletsprojects.com/en/stable/patterns/fileuploads/
+        if request.method == 'POST':
             file = request.files['file']
             filecontent = file.read()
             filename = secure_filename(file.filename)
@@ -199,15 +180,15 @@ def upload():
             except ClientError as e:
                 logging.error(e)
                 return render_template('upload.html', flash="Error uploading file.")
-        else:
-            return render_template('upload.html', flash="Username and/or password are incorrect.")
-            
-        # # Reference - https://docs.djangoproject.com/fr/2.2/topics/http/file-uploads/
-        # files = request.files.getlist('file')
-        # print("file: ")
-        # print(files)
+                
+            # # Reference - https://docs.djangoproject.com/fr/2.2/topics/http/file-uploads/
+            # files = request.files.getlist('file')
+            # print("file: ")
+            # print(files)
 
-    return render_template('upload.html', flash="")
+        return render_template('upload.html', flash="")
+    else:
+        return redirect(url_for('login'))
 
 @app.route("/geturl", methods=['POST'])
 def geturl():
