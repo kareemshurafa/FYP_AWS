@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, flash, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session
 import boto3
 import os
 from flask_bcrypt import Bcrypt
@@ -6,20 +6,21 @@ from werkzeug.utils import secure_filename
 from botocore.exceptions import ClientError
 import logging
 from dotenv import load_dotenv
-# import zipfile
-# from PIL import Image
 
+# Reference - adadpted from https://flask.palletsprojects.com/en/stable/quickstart/
+# setting up flask environment and app
 app = Flask(__name__)
 app.secret_key = os.getenv('APP_SECRET_KEY')
+# setting up password authenticator
 bcrypt = Bcrypt(app)
 
+# for local testing to use the local .env file values
 local = False
-
-# For local testing:
 if local:
     load_dotenv()
 
 # Reference - https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html
+# initialising the s3 client object to perform requests with
 s3_client = boto3.client(
     's3',
     aws_access_key_id=os.getenv('S3_KEY'), # access key for AWS account
@@ -27,13 +28,17 @@ s3_client = boto3.client(
     region_name=os.getenv('REGION')
 )
 
-# Reference - adadpted from https://flask.palletsprojects.com/en/stable/quickstart/
+# Reference - https://flask.palletsprojects.com/en/stable/quickstart/#sessions
+# home page checks if user is logged in, and redirects appropriately
 @app.route("/")
 def home():
     if 'username' in session:
         return render_template('home.html', user=session['username'])
     return redirect(url_for('login'))
 
+# Reference - https://flask.palletsprojects.com/en/stable/quickstart/#sessions
+# bcrypt used to check provided password
+# successful login adds username to current session
 @app.route("/login", methods=['GET', 'POST'])
 def login():
     if 'username' in session:
@@ -54,10 +59,13 @@ def login():
         
     return render_template('login.html')
 
+# Reference - https://flask.palletsprojects.com/en/stable/quickstart/#sessions
+# on logout, removes username from the current session
 @app.route('/logout')
 def logout():
     session.pop('username', None)
     return redirect(url_for('home'))
+
 
 @app.route("/getlist")
 def getlist():
@@ -67,13 +75,15 @@ def getlist():
             response = s3_client.list_objects(
                 Bucket=os.getenv('BUCKET_NAME')
             )
+            # extracting the contents from returned response
             object_list = []
             contents = response["Contents"]
+            # extracting the key (object names in the S3 bucket)
             for content in contents:
                 object_list.append(str(content['Key']))
             return render_template('getlist.html', list=object_list)
         except ClientError as e:
-            logging.error(e)
+            app.logger.info(e)
             return render_template('getlist.html', flash="Unknown error occured during operation.")
     else:
         return redirect(url_for('login'))
@@ -84,7 +94,6 @@ def delete():
     if 'username' in session:
         if request.method =='POST':
             file = request.form.get('file')
-
             # Reference - https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3/client/get_object.html#S3.Client.get_object
             # check if object with the given key exists first
             try:
@@ -93,7 +102,7 @@ def delete():
                     Key=file
                 )
             except ClientError as e:
-                logging.error(e)
+                app.logger.info(e)
                 return render_template('delete.html', flash="File name does not exist.")
             # Reference - https://docs.aws.amazon.com/boto3/latest/reference/services/s3/client/delete_object.html
             try:
@@ -101,10 +110,10 @@ def delete():
                     Bucket = os.getenv('BUCKET_NAME'),
                     Key=file
                 )
-                print(response)
+                app.logger.info(response)
                 return render_template('delete.html', flash="Successfully deleted!")
             except ClientError as e:
-                logging.error(e)
+                app.logger.info(e)
                 return render_template('delete.html', flash="Unexpected error occured whilst deleting file")
         return render_template('delete.html', flash='')
     else:
@@ -116,7 +125,6 @@ def rename():
         if request.method =='POST':
             old_file = request.form.get('old_name')
             new_file = request.form.get('new_name')
-
             # Reference - https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3/client/get_object.html#S3.Client.get_object
             # check if object with the given key exists first
             try:
@@ -125,11 +133,12 @@ def rename():
                     Key=old_file
                 )
             except ClientError as e:
-                logging.error(e)
+                app.logger.info(e)
                 return render_template('rename.html', flash="File name does not exist.")
             # Reference - https://docs.aws.amazon.com/boto3/latest/reference/services/s3/client/copy_object.html
-            # copying over the original object with a new name - then we delete the old object
-            # NEED TO CHECK FILE NAME if it's original + valid
+            # copying over the original object with a new name, then delete the old object
+            # making sure provided file name is valid
+            new_file = secure_filename(new_file)
             try:
                 response = s3_client.copy_object(
                     Bucket=os.getenv('BUCKET_NAME'),
@@ -140,19 +149,19 @@ def rename():
                     Key=new_file
                 )
             except ClientError as e:
-                logging.error(e)
+                app.logger.info(e)
                 return render_template('rename.html', flash="Error during copying operation.")
             # Reference - https://docs.aws.amazon.com/boto3/latest/reference/services/s3/client/delete_object.html
-            # delete old object
+            # deleting old object
             try:
                 response = s3_client.delete_object(
                     Bucket = os.getenv('BUCKET_NAME'),
                     Key=old_file
                 )
-                print(response)
+                app.logger.info(response)
                 return render_template('rename.html', flash="Successfully renamed file!")
             except ClientError as e:
-                logging.error(e)
+                app.logger.info(e)
                 return render_template('rename.html', flash="Unexpected error occured whilst deleting old file")
         return render_template('rename.html', flash='')
     else:
@@ -166,8 +175,9 @@ def upload():
         if request.method == 'POST':
             file = request.files['file']
             filecontent = file.read()
+            # ensures provided file name is correct and won't break any methods down the line
             filename = secure_filename(file.filename)
-            print(filename)
+            app.logger.info(filename)
             # Reference - https://docs.aws.amazon.com/boto3/latest/reference/services/s3/client/put_object.html
             try:
                 response = s3_client.put_object(
@@ -175,17 +185,11 @@ def upload():
                     Bucket = os.getenv('BUCKET_NAME'),
                     Key = filename
                 )
-                print(response)
+                app.logger.info(response)
                 return render_template('upload.html', flash="Successfully uploaded!")
             except ClientError as e:
-                logging.error(e)
+                app.logger.info(e)
                 return render_template('upload.html', flash="Error uploading file.")
-                
-            # # Reference - https://docs.djangoproject.com/fr/2.2/topics/http/file-uploads/
-            # files = request.files.getlist('file')
-            # print("file: ")
-            # print(files)
-
         return render_template('upload.html', flash="")
     else:
         return redirect(url_for('login'))
@@ -194,19 +198,13 @@ def upload():
 def geturl():
     if request.method == 'POST':
         # Reference - https://tedboy.github.io/flask/generated/generated/flask.Request.html
-        
-        data = request.get_json(silent=True) # silent set to True to avoid direct fails and return None
+        data = request.get_json(silent=True) # silent set to avoid direct fails and return None
         app.logger.info(data)
         key = data['objectName']
         password = data['password']
-
-        # key = request.form['objectName']
-        # password = request.form['password']
-
         # checking if user passed appropriate .zip suffix for object name in S3 bucket
         if not key.endswith(".zip"):
             key += ".zip"
-        
         # Reference - https://flask-bcrypt.readthedocs.io/en/1.0.1/
         password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
         password_env = os.getenv('VR_PASSWORD')
@@ -224,7 +222,7 @@ def geturl():
                 return msg, 404
             # Reference - https://boto3.amazonaws.com/v1/documentation/api/latest/guide/s3-presigned-urls.html
             try:
-                # Changed response to include key from JSON request
+                # create the pre-signed URL to return to the VR headset
                 response = s3_client.generate_presigned_url(
                     'get_object',
                     Params={'Bucket': os.getenv('BUCKET_NAME'), 'Key': key},

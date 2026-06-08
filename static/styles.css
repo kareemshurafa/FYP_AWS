@@ -1,5 +1,6 @@
 /* Reference - https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Getting_started */
 /* Reference - https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/div */
+/* Reference - https://flask.palletsprojects.com/en/stable/tutorial/static/ */
 /* To add to each .html file: <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}"/> */
 .box {
     width: 300px;
@@ -10,7 +11,7 @@
 }
 
 .back{
-       width: 300px;
+    width: 300px;
     background-color: #99ABBF;
     border: 25px;
     padding: 25px;
