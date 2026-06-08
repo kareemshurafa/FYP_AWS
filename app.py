@@ -183,6 +183,7 @@ def upload():
             filename = secure_filename(file.filename)
             app.logger.info(filename)
             result = q.enqueue(upload_to_s3, filecontent, filename)
+            return render_template('upload.html', flash="Successfully sent off for uploading!")
         return render_template('upload.html', flash="")
     else:
         return redirect(url_for('login'))
