@@ -182,7 +182,7 @@ def upload():
             # ensures provided file name is correct and won't break any methods down the line
             filename = secure_filename(file.filename)
             app.logger.info(filename)
-            result = q.enqueue(upload_to_s3, filecontent, filename)
+            result = q.enqueue(upload_to_s3, filecontent, filename, job_timeout=300)
             return render_template('upload.html', flash="Successfully sent off for uploading!")
         return render_template('upload.html', flash="")
     else:
