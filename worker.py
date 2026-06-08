@@ -10,9 +10,9 @@ if local:
 
 listen = ['high', 'default', 'low']
 
-redis_url = os.getenv('REDIS_URL', 'redis://localhost:6379')
+# redis_url = os.getenv('REDIS_URL', 'redis://localhost:6379')
 
-conn = redis.from_url(redis_url)
+# conn = redis.from_url(redis_url)
 
 # Reference - https://devcenter.heroku.com/articles/connecting-heroku-redis#connecting-in-python
 url = urlparse(os.environ.get("REDIS_URL"))

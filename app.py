@@ -182,7 +182,7 @@ def upload():
             # ensures provided file name is correct and won't break any methods down the line
             filename = secure_filename(file.filename)
             app.logger.info(filename)
-            q.enqueue(upload_to_s3, filecontent, filename)
+            result = q.enqueue(upload_to_s3, filecontent, filename)
         return render_template('upload.html', flash="")
     else:
         return redirect(url_for('login'))
@@ -196,9 +196,11 @@ def upload_to_s3(filecontent, filename):
             Key = filename
         )
         app.logger.info(response)
+        return "Successful upload!"
         # return render_template('upload.html', flash="Successfully uploaded!")
     except ClientError as e:
         app.logger.info(e)
+        return "Unsuccessful upload"
         # return render_template('upload.html', flash="Error uploading file.")
 
 @app.route("/geturl", methods=['POST'])
