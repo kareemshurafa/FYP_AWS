@@ -8,6 +8,7 @@ import logging
 from dotenv import load_dotenv
 from rq import Queue
 from worker import conn
+from utils import upload_to_s3
 
 # Reference - adadpted from https://flask.palletsprojects.com/en/stable/quickstart/
 # setting up flask environment and app
@@ -187,28 +188,6 @@ def upload():
         return render_template('upload.html', flash="")
     else:
         return redirect(url_for('login'))
-    
-def upload_to_s3(filecontent, filename):
-    s3_client_upload = boto3.client(
-    's3',
-    aws_access_key_id=os.getenv('S3_KEY'), # access key for AWS account
-    aws_secret_access_key=os.getenv('S3_ACCESS'), # secret key for AWS account
-    region_name=os.getenv('REGION')
-)
-    # Reference - https://docs.aws.amazon.com/boto3/latest/reference/services/s3/client/put_object.html
-    try:
-        response = s3_client_upload.put_object(
-            Body = filecontent,
-            Bucket = os.getenv('BUCKET_NAME'),
-            Key = filename
-        )
-        app.logger.info(response)
-        return "Successful upload!"
-        # return render_template('upload.html', flash="Successfully uploaded!")
-    except ClientError as e:
-        app.logger.info(e)
-        return "Unsuccessful upload"
-        # return render_template('upload.html', flash="Error uploading file.")
 
 @app.route("/geturl", methods=['POST'])
 def geturl():
