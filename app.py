@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, copy_current_request_context
+from flask import Flask, render_template, request, redirect, url_for, session
 import boto3
 import os
 from flask_bcrypt import Bcrypt
@@ -17,7 +17,7 @@ app.secret_key = os.getenv('APP_SECRET_KEY')
 # setting up password authenticator
 bcrypt = Bcrypt(app)
 
-q = Queue(connection=conn)
+q = Queue('high', connection=conn)
 
 # for local testing to use the local .env file values
 local = False
@@ -176,37 +176,15 @@ def rename():
 @app.route("/upload", methods = ['GET', 'POST'])
 def upload():
     if 'username' in session:
-        @copy_current_request_context
-        def upload_to_s3():
-            # Reference - https://flask.palletsprojects.com/en/stable/patterns/fileuploads/
-            if request.method == 'POST':
-                file = request.files['file']
-                filecontent = file.read()
-                # ensures provided file name is correct and won't break any methods down the line
-                filename = secure_filename(file.filename)
-                app.logger.info(filename)
-
-                s3_client_upload = boto3.client(
-                's3',
-                aws_access_key_id=os.getenv('S3_KEY'), # access key for AWS account
-                aws_secret_access_key=os.getenv('S3_ACCESS'), # secret key for AWS account
-                region_name=os.getenv('REGION')
-            )
-                # Reference - https://docs.aws.amazon.com/boto3/latest/reference/services/s3/client/put_object.html
-                try:
-                    response = s3_client_upload.put_object(
-                        Body = filecontent,
-                        Bucket = os.getenv('BUCKET_NAME'),
-                        Key = filename
-                    )
-                    print(response)
-                    return "Successful upload!"
-                    # return render_template('upload.html', flash="Successfully uploaded!")
-                except ClientError as e:
-                    print(e)
-                    return "Unsuccessful upload"
-                    # return render_template('upload.html', flash="Error uploading file.")
-        result = q.enqueue(upload_to_s3, job_timeout=300)
+        # Reference - https://flask.palletsprojects.com/en/stable/patterns/fileuploads/
+        if request.method == 'POST':
+            file = request.files['file']
+            filecontent = file.read()
+            # ensures provided file name is correct and won't break any methods down the line
+            filename = secure_filename(file.filename)
+            app.logger.info(filename)
+            result = q.enqueue(upload_to_s3, filecontent, filename, job_timeout=300)
+            return render_template('upload.html', flash="Successfully sent off for uploading!")
         return render_template('upload.html', flash="")
     else:
         return redirect(url_for('login'))
