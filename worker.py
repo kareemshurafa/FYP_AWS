@@ -1,6 +1,7 @@
 import os
 import redis
-from rq import Worker, Queue, Connection
+from rq import Queue, Connection
+from rq.worker import HerokuWorker as Worker
 from dotenv import load_dotenv
 from urllib.parse import urlparse
 
