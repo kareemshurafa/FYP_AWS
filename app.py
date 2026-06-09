@@ -6,9 +6,6 @@ from werkzeug.utils import secure_filename
 from botocore.exceptions import ClientError
 import logging
 from dotenv import load_dotenv
-from rq import Queue
-from worker import conn
-from utils import upload_to_s3
 
 # Reference - adadpted from https://flask.palletsprojects.com/en/stable/quickstart/
 # setting up flask environment and app
@@ -16,8 +13,6 @@ app = Flask(__name__)
 app.secret_key = os.getenv('APP_SECRET_KEY')
 # setting up password authenticator
 bcrypt = Bcrypt(app)
-
-q = Queue('high', connection=conn)
 
 # for local testing to use the local .env file values
 local = False
@@ -71,7 +66,6 @@ def logout():
     session.pop('username', None)
     return redirect(url_for('home'))
 
-
 @app.route("/getlist")
 def getlist():
     if 'username' in session:
@@ -92,7 +86,6 @@ def getlist():
             return render_template('getlist.html', flash="Unknown error occured during operation.")
     else:
         return redirect(url_for('login'))
-
 
 @app.route("/delete", methods = ['GET', 'POST'])
 def delete():
@@ -183,12 +176,22 @@ def upload():
             # ensures provided file name is correct and won't break any methods down the line
             filename = secure_filename(file.filename)
             app.logger.info(filename)
-            result = q.enqueue(upload_to_s3, filecontent, filename, job_timeout=300)
-            return render_template('upload.html', flash="Successfully sent off for uploading!")
+            # Reference - https://docs.aws.amazon.com/boto3/latest/reference/services/s3/client/put_object.html
+            try:
+                response = s3_client.put_object(
+                    Body = filecontent,
+                    Bucket = os.getenv('BUCKET_NAME'),
+                    Key = filename
+                )
+                print(response)
+                return render_template('upload.html', flash="Successfully uploaded!")
+            except ClientError as e:
+                print(e)
+                return render_template('upload.html', flash="Error uploading file.")
         return render_template('upload.html', flash="")
     else:
         return redirect(url_for('login'))
-
+    
 @app.route("/geturl", methods=['POST'])
 def geturl():
     if request.method == 'POST':
