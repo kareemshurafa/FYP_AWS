@@ -1,21 +1,14 @@
-from flask import request
 import boto3
 import os
 from botocore.exceptions import ClientError
-from werkzeug.utils import secure_filename
 
-def upload_to_s3():
+def upload_to_s3(filecontent, filename):
     s3_client_upload = boto3.client(
     's3',
     aws_access_key_id=os.getenv('S3_KEY'), # access key for AWS account
     aws_secret_access_key=os.getenv('S3_ACCESS'), # secret key for AWS account
     region_name=os.getenv('REGION')
-)   
-    file = request.files['file']
-    filecontent = file.read()
-    # ensures provided file name is correct and won't break any methods down the line
-    filename = secure_filename(file.filename)
-    print(filename)    
+)
     # Reference - https://docs.aws.amazon.com/boto3/latest/reference/services/s3/client/put_object.html
     try:
         response = s3_client_upload.put_object(
